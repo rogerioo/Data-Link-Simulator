@@ -33,9 +33,6 @@ char complete_message[100000];
 
 void send_message(const char *msg)
 {
-    /* Envia a mensagem  */
-
-    printf("Enviando: %s\n", msg);
     int n = sendto(sd, msg, strlen(msg), 0,
                    (const struct sockaddr *)&endServ, sizeof(endServ));
     if (n < 0)
@@ -88,37 +85,67 @@ void slice_str(const char *str, char *buffer, int start, int end)
 int main()
 {
     int hasRead = 0;
-    init_queue();
+
     while (1)
     {
-        int n = msgctl(msgid, IPC_STAT, &buf);
-        if (n < 0)
-        {
-            perror("Error on reading queue");
-            exit(1);
-        }
-        if (buf.msg_qnum <= 0 && hasRead)
-        {
-            printf("oie\n");
-            printf("%s\n", complete_message);
-            break;
-        }
-        msgrcv(msgid, &message, sizeof(message), 1, 0);
-        strcat(complete_message, message.mesg_text);
-        hasRead = 1;
-        sleep(0.5);
-    }
-    printf("saiu\n");
-    init_udp();
+        system("clear");
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+        printf("@@           Link A2            @@\n");
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 
-    for (int i = 0; i < strlen(complete_message); i += MAX)
-    {
-        char buffer[MAX];
-        slice_str(complete_message, buffer, i, i + MAX);
+        printf("\nWaiting for messages in the queue...\n\n");
+
+        init_queue();
+
+        int hasRead = 0;
+
+        memset(complete_message, 0, sizeof(complete_message));
+
+        while (1)
+        {
+            int n = msgctl(msgid, IPC_STAT, &buf);
+            if (n < 0)
+            {
+                perror("Error on reading queue");
+                exit(1);
+            }
+            if (buf.msg_qnum <= 0 && hasRead)
+            {
+                printf("Complete message received: [%s]\n", complete_message);
+                break;
+            }
+            msgrcv(msgid, &message, sizeof(message), 1, 0);
+            strcat(complete_message, message.mesg_text);
+            hasRead = 1;
+            sleep(0.5);
+        }
+
+        init_udp();
+
+        int packages_count = 0;
+
+        int message_size = strlen(complete_message);
+        int total_packages = message_size / MAX + (message_size % MAX != 0 ? 1 : 0);
+
+        for (int i = 0; i < message_size; i += MAX)
+        {
+            char buffer[MAX];
+            slice_str(complete_message, buffer, i, i + MAX);
+            send_message(buffer);
+
+            printf("\nPackage [%d/%d]: [%s] \n", ++packages_count, total_packages, message.mesg_text);
+        }
+
+        char buffer[3];
+        buffer[0] = '@';
+        buffer[1] = '#';
+        buffer[2] = 0;
         send_message(buffer);
-    }
 
-    msgctl(msgid, IPC_RMID, NULL);
+        printf("\nEverything sent! ;)\n\n");
+
+        sleep(5);
+    }
 
     return 0;
 }

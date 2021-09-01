@@ -37,7 +37,6 @@ void receive_message()
     memset(message.mesg_text, 0x0, MAX);
     tam_Cli = sizeof(endCli);
     n = recvfrom(sd, message.mesg_text, MAX, 0, (struct sockaddr *)&endCli, &tam_Cli);
-    printf("Resposta recebida do Cliente : %s\n", message.mesg_text);
 }
 
 void init_queue()
@@ -75,27 +74,42 @@ void init_udp()
 
 int main()
 {
-    init_queue();
-    //msgsnd(msgid, "banana", sizeof("banana"), 0);
 
     init_udp();
 
     while (1)
     {
-        receive_message();
-        // msgsnd to send message
+        system("clear");
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+        printf("@@           Link B2            @@\n");
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 
-        int n = msgsnd(msgid, &message, sizeof(message), 0);
-        printf("Enviando %s\n", message.mesg_text);
-        // printf("O qué o n: %d\n", n);
+        printf("\nWaiting for messages via UDP socket...\n\n");
 
-        // sleep(10);
-
-        if (n < 0)
+        while (1)
         {
-            perror("Error writing on queue");
-            exit(1);
+            init_queue();
+
+            receive_message();
+
+            if (!strcmp(message.mesg_text, "@#\0"))
+                break;
+
+            printf("\nReceived package from client: [%s]\n", message.mesg_text);
+
+            int n = msgsnd(msgid, &message, sizeof(message), 0);
+            printf("\nPackage sent to the queue: [%s]\n", message.mesg_text);
+
+            if (n < 0)
+            {
+                perror("Error writing on queue");
+                exit(1);
+            }
         }
+
+        printf("\nEverything sent! ;)\n\n");
+
+        sleep(5);
     }
 
     return 0;

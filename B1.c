@@ -32,30 +32,42 @@ void init_queue()
 
 int main()
 {
-    int hasRead = 0;
-    init_queue();
     while (1)
     {
-        int n = msgctl(msgid, IPC_STAT, &buf);
-        if (n < 0)
-        {
-            perror("Error on reading queue");
-            exit(1);
-        }
-        if (buf.msg_qnum <= 0 && hasRead)
-        {
-            printf("%s\n", complete_message);
-            break;
-        }
-        // printf("aqui\n");
-        msgrcv(msgid, &message, sizeof(message), 1, 0);
-        strcat(complete_message, message.mesg_text);
-        hasRead = 1;
+        system("clear");
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+        printf("@@           Link B1            @@\n");
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 
-        sleep(0.5);
+        printf("\nWaiting for messages in the queue...\n\n");
+
+        int hasRead = 0;
+        init_queue();
+
+        memset(complete_message, 0, sizeof(complete_message));
+
+        while (1)
+        {
+            int n = msgctl(msgid, IPC_STAT, &buf);
+            if (n < 0)
+            {
+                perror("Error on reading queue");
+                exit(1);
+            }
+            if (buf.msg_qnum <= 0 && hasRead)
+            {
+                printf("Complete message received: [%s]\n", complete_message);
+                break;
+            }
+
+            msgrcv(msgid, &message, sizeof(message), 1, 0);
+            strcat(complete_message, message.mesg_text);
+            hasRead = 1;
+            sleep(0.5);
+        }
+
+        sleep(5);
     }
-
-    msgctl(msgid, IPC_RMID, NULL);
 
     return 0;
 }
